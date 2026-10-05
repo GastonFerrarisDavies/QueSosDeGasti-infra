@@ -74,6 +74,8 @@ jobs:
         run: terraform validate
 
       - name: Plan
+        # Sin pipefail, el `| tee` ocultaría un plan fallido y el error saldría recién en Apply.
+        shell: bash # -eo pipefail
         run: |
           terraform plan -out=tfplan -no-color | tee plan.txt
           {
