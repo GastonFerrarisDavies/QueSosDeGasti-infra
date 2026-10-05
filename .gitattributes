@@ -1,0 +1,2 @@
+# Los templates se ejecutan como bash en Linux: CRLF rompería los heredocs.
+* text=auto eol=lf

@@ -1,0 +1,52 @@
+#!/bin/bash
+# Lo ejecuta Azure (Run Command) como root en la VM en cada `terraform apply`
+# que cambie este script. Los secretos llegan como variables de entorno.
+# revision: ${deploy_revision}
+set -euo pipefail
+
+: "$${POSTGRES_PASSWORD:?falta el parámetro protegido POSTGRES_PASSWORD}"
+: "$${OPENAI_API_KEY:?falta el parámetro protegido OPENAI_API_KEY}"
+
+# En el primer arranque cloud-init todavía puede estar instalando Docker.
+cloud-init status --wait > /dev/null || true
+
+APP_DIR=/opt/quesosdegasti
+mkdir -p "$APP_DIR/data/postgres"
+cd "$APP_DIR"
+
+cat > docker-compose.yml <<'__COMPOSE__'
+${compose}
+__COMPOSE__
+
+cat > init.sql <<'__SQL__'
+${init_sql}
+__SQL__
+
+umask 077
+cat > .env <<__ENV__
+DB_IMAGE=${db_image}
+API_IMAGE=${api_image}
+FRONTEND_IMAGE=${frontend_image}
+POSTGRES_USER=${postgres_user}
+POSTGRES_DB=${postgres_db}
+POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+OPENAI_API_KEY=$OPENAI_API_KEY
+EMBEDDING_MODEL=${embedding_model}
+EMBEDDING_DIMENSIONS=${embedding_dimensions}
+ALLOWED_ORIGINS=${allowed_origins}
+__ENV__
+
+if [ -n "$${GHCR_TOKEN:-}" ]; then
+  echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+fi
+
+docker compose pull --quiet
+docker compose up -d --remove-orphans --wait --wait-timeout 300
+
+# Sincroniza los perfiles embebidos en la imagen de la API. Es idempotente;
+# si OpenAI falla no tira abajo el despliegue.
+docker compose run --rm --no-deps --entrypoint /seed api \
+  || echo "WARN: el seed falló, la API sigue con los perfiles anteriores" >&2
+
+docker image prune -af > /dev/null
+docker compose ps

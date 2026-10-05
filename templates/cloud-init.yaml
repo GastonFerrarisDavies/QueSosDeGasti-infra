@@ -1,0 +1,18 @@
+#cloud-config
+# Primer arranque de la VM: solo deja Docker listo. La app la despliega deploy.tf.
+# OJO: cualquier cambio en este archivo recrea la VM.
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose-v2
+
+# 2 GiB de RAM son justos para Postgres + API + nginx: swap como colchón.
+swap:
+  filename: /swapfile
+  size: 2147483648
+
+runcmd:
+  - systemctl enable --now docker
+  - usermod -aG docker ${admin_username}
