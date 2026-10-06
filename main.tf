@@ -115,11 +115,13 @@ resource "azurerm_linux_virtual_machine" "main" {
     disk_size_gb         = 30
   }
 
-  # Av2 solo soporta VMs de generación 1.
+  # Las series v6/v7 (p. ej. Falsv7) solo arrancan imágenes Gen2 y usan disco NVMe.
+  disk_controller_type = "NVMe"
+
   source_image_reference {
     publisher = "Canonical"
     offer     = "ubuntu-24_04-lts"
-    sku       = "server-gen1"
+    sku       = "server"
     version   = "latest"
   }
 
