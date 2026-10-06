@@ -15,7 +15,7 @@ variable "location" {
 variable "vm_size" {
   description = "Tamaño de la VM (B2ls v2: 2 vCPU, 4 GiB). Standard_A1_v2 no tiene capacidad en eastus2."
   type        = string
-  default     = "F1als_v7"
+  default     = "Standard_F1als_v7"
 }
 
 variable "dns_label" {
