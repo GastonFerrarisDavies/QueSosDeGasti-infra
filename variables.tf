@@ -9,7 +9,7 @@ variable "project_name" {
 variable "location" {
   description = "Región de Azure."
   type        = string
-  default     = "eastus2"
+  default     = "eastus"
 }
 
 variable "vm_size" {
